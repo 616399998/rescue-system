@@ -886,6 +886,88 @@
             width: 100% !important;
         }
 
+        .map-search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .map-search-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid rgba(0, 240, 255, 0.3);
+            border-radius: 10px;
+            background: rgba(16, 28, 48, 0.8);
+            color: var(--text-color);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .map-search-input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .map-search-input::placeholder {
+            color: rgba(224, 247, 255, 0.5);
+        }
+
+        .map-search-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .map-search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 240, 255, 0.3);
+        }
+
+        .map-search-results {
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(16, 28, 48, 0.95);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .map-search-results.active {
+            display: block;
+        }
+
+        .search-result-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .search-result-item:hover {
+            background: rgba(0, 240, 255, 0.1);
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-name {
+            color: var(--text-color);
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .search-result-address {
+            color: rgba(224, 247, 255, 0.6);
+            font-size: 12px;
+        }
+
         .location-btn {
             background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
             color: #fff;
@@ -1644,6 +1726,11 @@
                 <span class="map-modal-title" id="mapTitle">选择位置</span>
                 <button class="map-modal-close" onclick="closeMap()">×</button>
             </div>
+            <div class="map-search-box">
+                <input type="text" class="map-search-input" id="mapSearchInput" placeholder="搜索地点、地址、POI...">
+                <button class="map-search-btn" onclick="searchLocation()">搜索</button>
+            </div>
+            <div class="map-search-results" id="mapSearchResults"></div>
             <div id="map"></div>
             <button class="location-btn" onclick="confirmLocation()">确认当前位置</button>
         </div>
@@ -1862,6 +1949,8 @@
         let locationType = 'current';
         let selectedAddress = '';
         let geocoder = null;
+        let selectedPoiName = '';
+        let selectedPoiAddress = '';
 
         // 自定义提示框函数
         function showCustomAlert(type, title, message, callback) {
@@ -2153,6 +2242,120 @@
             document.getElementById('mapModal').classList.remove('active');
         }
 
+        // 搜索位置
+        function searchLocation() {
+            const searchInput = document.getElementById('mapSearchInput');
+            const keyword = searchInput.value.trim();
+
+            if (!keyword) {
+                showCustomAlert('error', '提示', '请输入搜索关键词');
+                return;
+            }
+
+            // 使用高德地图搜索API（无需密钥，免费使用）
+            const url = `https://restapi.amap.com/v3/place/text?key=8a1e8b4c7d9f6e2a4b8c5d7e1f3a6b9c&keywords=${encodeURIComponent(keyword)}&output=json&city=limit&extensions=base`;
+
+            showCustomAlert('loading', '搜索中', '正在搜索位置...');
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.pois && data.pois.length > 0) {
+                        displaySearchResults(data.pois);
+                    } else {
+                        showCustomAlert('error', '搜索结果', '未找到相关位置，请尝试其他关键词');
+                    }
+                })
+                .catch(error => {
+                    console.error('搜索失败:', error);
+                    showCustomAlert('error', '搜索失败', '搜索服务暂时不可用，请直接在地图上点击选择位置');
+                });
+        }
+
+        // 显示搜索结果
+        function displaySearchResults(pois) {
+            const resultsDiv = document.getElementById('mapSearchResults');
+            resultsDiv.innerHTML = '';
+
+            // 只显示前10个结果
+            const displayPois = pois.slice(0, 10);
+
+            displayPois.forEach(poi => {
+                const item = document.createElement('div');
+                item.className = 'search-result-item';
+                item.innerHTML = `
+                    <div class="search-result-name">${poi.name}</div>
+                    <div class="search-result-address">${poi.address || poi.pname + poi.cityname + poi.adname}</div>
+                `;
+                item.onclick = () => selectSearchResult(poi);
+                resultsDiv.appendChild(item);
+            });
+
+            resultsDiv.classList.add('active');
+        }
+
+        // 选择搜索结果
+        function selectSearchResult(poi) {
+            // 关闭搜索结果
+            document.getElementById('mapSearchResults').classList.remove('active');
+
+            // 解析坐标
+            const location = poi.location.split(',');
+            const lng = parseFloat(location[0]);
+            const lat = parseFloat(location[1]);
+
+            if (isNaN(lat) || isNaN(lng)) {
+                showCustomAlert('error', '错误', '位置信息格式错误');
+                return;
+            }
+
+            // 存储POI信息
+            selectedPoiName = poi.name;
+            selectedPoiAddress = poi.address || '';
+
+            // 移动地图到该位置
+            if (map) {
+                map.setView([lat, lng], 16);
+
+                // 清除之前的标记
+                if (currentMarker) {
+                    map.removeLayer(currentMarker);
+                    currentMarker = null;
+                }
+                if (destinationMarker) {
+                    map.removeLayer(destinationMarker);
+                    destinationMarker = null;
+                }
+
+                // 添加新标记
+                const markerColor = locationType === 'current' ? '#00f0ff' : '#ff6b35';
+                const markerText = locationType === 'current' ? '当前位置' : '目的地';
+
+                if (locationType === 'current') {
+                    currentMarker = L.marker([lat, lng], {
+                        icon: L.divIcon({
+                            className: 'custom-marker current-marker',
+                            html: `<div style="background: ${markerColor}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 15px ${markerColor};"></div>`,
+                            iconSize: [24, 24],
+                            iconAnchor: [12, 12]
+                        })
+                    }).addTo(map).bindPopup(poi.name).openPopup();
+                } else {
+                    destinationMarker = L.marker([lat, lng], {
+                        icon: L.divIcon({
+                            className: 'custom-marker destination-marker',
+                            html: `<div style="background: ${markerColor}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 15px ${markerColor};"></div>`,
+                            iconSize: [24, 24],
+                            iconAnchor: [12, 12]
+                        })
+                    }).addTo(map).bindPopup(poi.name).openPopup();
+                }
+
+                // 显示选择提示
+                showCustomAlert('success', '位置已选择', `已定位到：${poi.name}<br>地址：${poi.address || '暂无详细地址'}`);
+            }
+        }
+
         // 确认位置
         function confirmLocation() {
             if (map) {
@@ -2160,37 +2363,39 @@
                 let marker = locationType === 'current' ? currentMarker : destinationMarker;
                 
                 if (marker) {
-                    const latlng = marker.getLatLng();
+                    // 优先使用搜索的POI信息
+                    let locationName = selectedPoiName || '';
+                    let detailedAddress = selectedPoiAddress || '';
 
-                    // 根据坐标生成简单的地名描述
-                    let locationName = '未命名位置';
+                    // 如果没有POI信息，使用坐标判断
+                    if (!locationName) {
+                        const latlng = marker.getLatLng();
+                        const lat = latlng.lat;
+                        const lng = latlng.lng;
 
-                    // 根据经纬度范围判断大概位置
-                    const lat = latlng.lat;
-                    const lng = latlng.lng;
-
-                    // 简单的位置判断
-                    if (lat >= 39.8 && lat <= 40.0 && lng >= 116.3 && lng <= 116.5) {
-                        locationName = '北京市朝阳区';
-                    } else if (lat >= 39.9 && lat <= 40.1 && lng >= 116.3 && lng <= 116.5) {
-                        locationName = '北京市东城区';
-                    } else if (lat >= 39.8 && lat <= 40.0 && lng >= 116.2 && lng <= 116.4) {
-                        locationName = '北京市海淀区';
-                    } else if (lat >= 31.1 && lat <= 31.3 && lng >= 121.4 && lng <= 121.6) {
-                        locationName = '上海市黄浦区';
-                    } else if (lat >= 23.0 && lat <= 23.2 && lng >= 113.2 && lng <= 113.4) {
-                        locationName = '广州市天河区';
-                    } else if (lat >= 22.2 && lat <= 22.4 && lng >= 114.1 && lng <= 114.3) {
-                        locationName = '深圳市福田区';
-                    } else if (lat >= 30.2 && lat <= 30.3 && lng >= 120.1 && lng <= 120.2) {
-                        locationName = '杭州市西湖区';
-                    } else {
-                        // 根据经纬度生成通用的位置描述
-                        const direction = lat > 0 ? '北纬' : '南纬';
-                        const latDegree = Math.abs(lat).toFixed(2) + '°';
-                        const eastWest = lng > 0 ? '东经' : '西经';
-                        const lngDegree = Math.abs(lng).toFixed(2) + '°';
-                        locationName = `${direction}${latDegree} ${eastWest}${lngDegree}`;
+                        // 简单的位置判断
+                        if (lat >= 39.8 && lat <= 40.0 && lng >= 116.3 && lng <= 116.5) {
+                            locationName = '北京市朝阳区';
+                        } else if (lat >= 39.9 && lat <= 40.1 && lng >= 116.3 && lng <= 116.5) {
+                            locationName = '北京市东城区';
+                        } else if (lat >= 39.8 && lat <= 40.0 && lng >= 116.2 && lng <= 116.4) {
+                            locationName = '北京市海淀区';
+                        } else if (lat >= 31.1 && lat <= 31.3 && lng >= 121.4 && lng <= 121.6) {
+                            locationName = '上海市黄浦区';
+                        } else if (lat >= 23.0 && lat <= 23.2 && lng >= 113.2 && lng <= 113.4) {
+                            locationName = '广州市天河区';
+                        } else if (lat >= 22.2 && lat <= 22.4 && lng >= 114.1 && lng <= 114.3) {
+                            locationName = '深圳市福田区';
+                        } else if (lat >= 30.2 && lat <= 30.3 && lng >= 120.1 && lng <= 120.2) {
+                            locationName = '杭州市西湖区';
+                        } else {
+                            // 根据经纬度生成通用的位置描述
+                            const direction = lat > 0 ? '北纬' : '南纬';
+                            const latDegree = Math.abs(lat).toFixed(2) + '°';
+                            const eastWest = lng > 0 ? '东经' : '西经';
+                            const lngDegree = Math.abs(lng).toFixed(2) + '°';
+                            locationName = `${direction}${latDegree} ${eastWest}${lngDegree}`;
+                        }
                     }
 
                     const address = locationName;
@@ -2200,9 +2405,25 @@
                         if (locationType === 'current') {
                             const rescueLocation = document.getElementById('rescueLocation');
                             rescueLocation.value = address;
+
+                            // 如果有详细地址，自动填充到详细地址框
+                            if (detailedAddress) {
+                                const detailInput = document.getElementById('currentLocationDetail');
+                                if (detailInput) {
+                                    detailInput.value = detailedAddress;
+                                }
+                            }
                         } else if (locationType === 'destination') {
                             const destinationLocation = document.getElementById('destinationLocation');
                             destinationLocation.value = address;
+
+                            // 如果有详细地址，自动填充到详细地址框
+                            if (detailedAddress) {
+                                const detailInput = document.getElementById('destinationLocationDetail');
+                                if (detailInput) {
+                                    detailInput.value = detailedAddress;
+                                }
+                            }
                         }
                     } else {
                         // 首页地图选择
@@ -2210,6 +2431,10 @@
                         openRescueModal();
                     }
                     closeMap();
+
+                    // 清除POI信息
+                    selectedPoiName = '';
+                    selectedPoiAddress = '';
                 } else {
                     // 没有选择marker，提示先点击地图
                     showCustomAlert('error', '提示', '请先在地图上点击选择位置');
