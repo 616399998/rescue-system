@@ -1981,10 +1981,10 @@
                 setTimeout(function() {
                     map = L.map('map').setView([39.9042, 116.4074], 13);
 
-                    // 使用OpenStreetMap瓦片服务（免费无需密钥）
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        subdomains: ['a', 'b', 'c'],
-                        attribution: '© OpenStreetMap',
+                    // 使用国内可访问的地图瓦片服务（无需密钥）
+                    L.tileLayer('https://mt{s}.google.cn/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                        subdomains: ['1', '2', '3'],
+                        attribution: '© Google Maps',
                         minZoom: 3,
                         maxZoom: 19
                     }).addTo(map);
