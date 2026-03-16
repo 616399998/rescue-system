@@ -1776,12 +1776,16 @@
                         <input type="text" class="form-input" id="rescueLocation" placeholder="点击选择位置" onclick="openLocationForRescue('current')">
                     </div>
                     <div class="form-group">
+                        <label class="form-label">当前位置详细地址</label>
+                        <textarea class="form-textarea" id="currentLocationDetail" placeholder="请输入当前位置的详细地址，如道路名称、门牌号、附近地标等"></textarea>
+                    </div>
+                    <div class="form-group">
                         <label class="form-label">目的地</label>
                         <input type="text" class="form-input" id="destinationLocation" placeholder="点击选择目的地" onclick="openLocationForRescue('destination')">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">详细地址</label>
-                        <textarea class="form-textarea" placeholder="请输入详细地址，如道路名称、门牌号等">北京市朝阳区建国路88号</textarea>
+                        <label class="form-label">目的地详细地址</label>
+                        <textarea class="form-textarea" id="destinationLocationDetail" placeholder="请输入目的地的详细地址，如道路名称、门牌号、附近地标等"></textarea>
                     </div>
                 </div>
 
@@ -2157,84 +2161,27 @@
                 
                 if (marker) {
                     const latlng = marker.getLatLng();
-                    
-                    // 使用逆地理编码获取地址
-                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&zoom=18&addressdetails=1`)
-                        .then(response => response.json())
-                        .then(data => {
-                            let address = '未知地址';
-                            if (data && data.display_name) {
-                                // 简化地址，只显示主要部分
-                                const addressParts = data.display_name.split(',').slice(0, 4).join(',');
-                                address = addressParts || data.display_name;
-                            } else {
-                                // 如果无法获取地址，使用备用地址
-                                const fallbackAddresses = {
-                                    'current': '北京市朝阳区建国路88号',
-                                    'destination': '北京市朝阳区国贸大厦'
-                                };
-                                address = fallbackAddresses[locationType] || '北京市';
-                            }
-                            
-                            if (isRescueMap) {
-                                // 救援表单中的地图选择
-                                if (locationType === 'current') {
-                                    const rescueLocation = document.getElementById('rescueLocation');
-                                    rescueLocation.value = address;
-                                } else if (locationType === 'destination') {
-                                    const destinationLocation = document.getElementById('destinationLocation');
-                                    destinationLocation.value = address;
-                                }
-                            } else {
-                                // 首页地图选择
-                                alert('位置已确认：' + address);
-                                openRescueModal();
-                            }
-                            
-                            closeMap();
-                        })
-                        .catch(error => {
-                            console.log('获取地址失败:', error);
-                            // 使用备用地址
-                            const fallbackAddresses = {
-                                'current': '北京市朝阳区建国路88号',
-                                'destination': '北京市朝阳区国贸大厦'
-                            };
-                            const address = fallbackAddresses[locationType] || '北京市';
-                            
-                            if (isRescueMap) {
-                                if (locationType === 'current') {
-                                    document.getElementById('rescueLocation').value = address;
-                                } else if (locationType === 'destination') {
-                                    document.getElementById('destinationLocation').value = address;
-                                }
-                            } else {
-                                alert('位置已确认：' + address);
-                                openRescueModal();
-                            }
-                            
-                            closeMap();
-                        });
-                } else {
-                    // 没有选择marker，使用默认地址
-                    const fallbackAddresses = {
-                        'current': '北京市朝阳区建国路88号',
-                        'destination': '北京市朝阳区国贸大厦'
-                    };
-                    const address = fallbackAddresses[locationType] || '北京市';
-                    
+                    // 显示坐标位置
+                    const address = `位置已选择 (纬度: ${latlng.lat.toFixed(6)}, 经度: ${latlng.lng.toFixed(6)})`;
+
                     if (isRescueMap) {
+                        // 救援表单中的地图选择
                         if (locationType === 'current') {
-                            document.getElementById('rescueLocation').value = address;
+                            const rescueLocation = document.getElementById('rescueLocation');
+                            rescueLocation.value = address;
                         } else if (locationType === 'destination') {
-                            document.getElementById('destinationLocation').value = address;
+                            const destinationLocation = document.getElementById('destinationLocation');
+                            destinationLocation.value = address;
                         }
                     } else {
-                        alert('位置已确认：' + address);
+                        // 首页地图选择
+                        showCustomAlert('success', '位置确认', address);
                         openRescueModal();
                     }
-                    
                     closeMap();
+                } else {
+                    // 没有选择marker，提示先点击地图
+                    showCustomAlert('error', '提示', '请先在地图上点击选择位置');
                 }
             } else {
                 closeMap();
@@ -2515,7 +2462,9 @@
             // 获取表单数据
             const rescueType = document.getElementById('rescueType').value;
             const rescueLocation = document.getElementById('rescueLocation').value;
+            const currentLocationDetail = document.getElementById('currentLocationDetail')?.value || '';
             const destinationLocation = document.getElementById('destinationLocation').value;
+            const destinationLocationDetail = document.getElementById('destinationLocationDetail')?.value || '';
 
             if (!rescueType) {
                 showCustomAlert('error', '提示', '请选择救援类型');
@@ -2550,6 +2499,17 @@
             };
             const vehicleTypeName = vehicleTypeNames[selectedVehicleType] || selectedVehicleType;
 
+            // 构建位置信息
+            let locationInfo = rescueLocation;
+            if (currentLocationDetail) {
+                locationInfo += ' (' + currentLocationDetail + ')';
+            }
+
+            let destinationInfo = destinationLocation;
+            if (destinationLocationDetail) {
+                destinationInfo += ' (' + destinationLocationDetail + ')';
+            }
+
             // 显示成功提示
             showCustomAlert(
                 'success',
@@ -2557,8 +2517,8 @@
                 '救援申请已提交！<br><br>' +
                 '<strong>救援类型:</strong> ' + rescueTypeName + '<br>' +
                 '<strong>车辆类型:</strong> ' + vehicleTypeName + '<br>' +
-                '<strong>当前位置:</strong> ' + rescueLocation + '<br>' +
-                '<strong>目的地:</strong> ' + destinationLocation + '<br><br>' +
+                '<strong>当前位置:</strong> ' + locationInfo + '<br>' +
+                '<strong>目的地:</strong> ' + destinationInfo + '<br><br>' +
                 '我们会尽快安排救援人员为您服务！',
                 function() {
                     closeRescueModal();
