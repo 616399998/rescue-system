@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索API测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1c1c1e;
+            color: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .search-box {
+            margin-bottom: 20px;
+        }
+        input {
+            padding: 10px;
+            width: 70%;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            background: #007AFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .results {
+            background: #2c2c2e;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .result-item {
+            padding: 10px;
+            border-bottom: 1px solid #3c3c3e;
+            cursor: pointer;
+        }
+        .result-item:hover {
+            background: #3c3c3e;
+        }
+        .result-name {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .result-address {
+            color: #8e8e93;
+            margin-top: 5px;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            background: #2c2c2e;
+            border-radius: 5px;
+        }
+        .error {
+            color: #ff453a;
+        }
+        .success {
+            color: #30d158;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>高德地图搜索API测试</h1>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="输入地点名称...">
+            <button onclick="searchLocation()">搜索</button>
+        </div>
+        <div id="status" class="status"></div>
+        <div id="results" class="results"></div>
+    </div>
+
+    <script>
+        function searchLocation() {
+            const input = document.getElementById('searchInput');
+            const keyword = input.value.trim();
+            const statusDiv = document.getElementById('status');
+            const resultsDiv = document.getElementById('results');
+
+            if (!keyword) {
+                statusDiv.innerHTML = '<span class="error">请输入搜索关键词</span>';
+                return;
+            }
+
+            statusDiv.innerHTML = '<span style="color: #ff9f0a;">搜索中...</span>';
+            resultsDiv.innerHTML = '';
+
+            const url = `https://restapi.amap.com/v3/place/text?key=8a1e8b4c7d9f6e2a4b8c5d7e1f3a6b9c&keywords=${encodeURIComponent(keyword)}&output=json&city=全国&extensions=base`;
+
+            console.log('请求URL:', url);
+
+            fetch(url)
+                .then(response => {
+                    console.log('响应状态:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('响应数据:', data);
+                    
+                    if (data.status === '1' && data.pois && data.pois.length > 0) {
+                        statusDiv.innerHTML = `<span class="success">找到 ${data.pois.length} 个结果</span>`;
+                        
+                        data.pois.slice(0, 10).forEach(poi => {
+                            const item = document.createElement('div');
+                            item.className = 'result-item';
+                            
+                            let fullAddress = poi.address || '';
+                            if (poi.pname && poi.pname !== poi.cityname) {
+                                fullAddress = poi.pname + poi.cityname + poi.adname + (poi.address || '');
+                            } else if (poi.cityname && poi.cityname !== poi.adname) {
+                                fullAddress = poi.cityname + poi.adname + (poi.address || '');
+                            } else if (poi.adname) {
+                                fullAddress = poi.adname + (poi.address || '');
+                            }
+                            
+                            item.innerHTML = `
+                                <div class="result-name">${poi.name}</div>
+                                <div class="result-address">${fullAddress}</div>
+                            `;
+                            item.onclick = () => {
+                                console.log('选中:', poi, fullAddress);
+                                alert(`选中：${poi.name}\n地址：${fullAddress}\n坐标：${poi.location}`);
+                            };
+                            resultsDiv.appendChild(item);
+                        });
+                    } else {
+                        statusDiv.innerHTML = `<span class="error">未找到相关位置</span>`;
+                        console.log('API返回:', data);
+                    }
+                })
+                .catch(error => {
+                    console.error('搜索失败:', error);
+                    statusDiv.innerHTML = `<span class="error">搜索失败：${error.message}</span>`;
+                });
+        }
+
+        // 支持回车搜索
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchLocation();
+            }
+        });
+    </script>
+</body>
+</html>

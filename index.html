@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>智能救援系统</title>
-    <!-- OpenStreetMap - 免费无需密钥 -->
+    <!-- 腾讯地图API -->
+    <script src="https://map.qq.com/api/gljs?v=1.exp&libraries=service&key=OB4BZ-D4W3U-B7VVO-4PJWW-6TKDJ-WPB77"></script>
     <style>
         * {
             margin: 0;
@@ -943,29 +944,37 @@
         }
 
         .search-result-item {
-            padding: 12px 15px;
-            border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+            padding: 15px;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.2);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            background: rgba(16, 28, 48, 0.8);
+            border-radius: 8px;
+            margin-bottom: 8px;
         }
 
         .search-result-item:hover {
-            background: rgba(0, 240, 255, 0.1);
+            background: rgba(0, 240, 255, 0.15);
+            border-color: rgba(0, 240, 255, 0.5);
+            transform: translateX(5px);
         }
 
         .search-result-item:last-child {
             border-bottom: none;
+            margin-bottom: 0;
         }
 
         .search-result-name {
             color: var(--text-color);
-            font-size: 14px;
-            margin-bottom: 5px;
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 6px;
         }
 
         .search-result-address {
-            color: rgba(224, 247, 255, 0.6);
-            font-size: 12px;
+            color: rgba(224, 247, 255, 0.7);
+            font-size: 13px;
+            line-height: 1.4;
         }
 
         .location-btn {
@@ -1727,12 +1736,12 @@
                 <button class="map-modal-close" onclick="closeMap()">×</button>
             </div>
             <div class="map-search-box">
-                <input type="text" class="map-search-input" id="mapSearchInput" placeholder="搜索地点、地址、POI...">
+                <input type="text" class="map-search-input" id="mapSearchInput" placeholder="搜索地点、地址、POI..." onkeypress="handleSearchKeyPress(event)">
                 <button class="map-search-btn" onclick="searchLocation()">搜索</button>
             </div>
             <div class="map-search-results" id="mapSearchResults"></div>
             <div id="map"></div>
-            <button class="location-btn" onclick="confirmLocation()">确认当前位置</button>
+            <button class="location-btn" onclick="confirmLocation()">确认选中位置</button>
         </div>
 
         <!-- 救援申请表单弹窗 -->
@@ -2242,6 +2251,13 @@
             document.getElementById('mapModal').classList.remove('active');
         }
 
+        // 处理搜索框回车键
+        function handleSearchKeyPress(event) {
+            if (event.key === 'Enter') {
+                searchLocation();
+            }
+        }
+
         // 搜索位置
         function searchLocation() {
             const searchInput = document.getElementById('mapSearchInput');
@@ -2252,17 +2268,24 @@
                 return;
             }
 
-            // 使用高德地图搜索API（无需密钥，免费使用）
-            const url = `https://restapi.amap.com/v3/place/text?key=8a1e8b4c7d9f6e2a4b8c5d7e1f3a6b9c&keywords=${encodeURIComponent(keyword)}&output=json&city=limit&extensions=base`;
+            // 使用高德地图搜索API
+            const url = `https://restapi.amap.com/v3/place/text?key=8a1e8b4c7d9f6e2a4b8c5d7e1f3a6b9c&keywords=${encodeURIComponent(keyword)}&output=json&city=全国&extensions=base`;
 
             showCustomAlert('loading', '搜索中', '正在搜索位置...');
 
             fetch(url)
-                .then(response => response.json())
+                .then(response => {
+                    console.log('API响应状态:', response.status);
+                    return response.json();
+                })
                 .then(data => {
-                    if (data && data.pois && data.pois.length > 0) {
+                    console.log('搜索结果数据:', data);
+                    
+                    if (data.status === '1' && data.pois && data.pois.length > 0) {
+                        console.log('找到POI数量:', data.pois.length);
                         displaySearchResults(data.pois);
                     } else {
+                        console.log('搜索失败或无结果:', data);
                         showCustomAlert('error', '搜索结果', '未找到相关位置，请尝试其他关键词');
                     }
                 })
@@ -2277,25 +2300,41 @@
             const resultsDiv = document.getElementById('mapSearchResults');
             resultsDiv.innerHTML = '';
 
+            console.log('准备显示搜索结果:', pois.length, '条');
+
             // 只显示前10个结果
             const displayPois = pois.slice(0, 10);
 
             displayPois.forEach(poi => {
                 const item = document.createElement('div');
                 item.className = 'search-result-item';
+                
+                // 构建完整地址
+                let fullAddress = poi.address || '';
+                if (poi.pname && poi.pname !== poi.cityname) {
+                    fullAddress = poi.pname + poi.cityname + poi.adname + (poi.address || '');
+                } else if (poi.cityname && poi.cityname !== poi.adname) {
+                    fullAddress = poi.cityname + poi.adname + (poi.address || '');
+                } else if (poi.adname) {
+                    fullAddress = poi.adname + (poi.address || '');
+                }
+                
                 item.innerHTML = `
                     <div class="search-result-name">${poi.name}</div>
-                    <div class="search-result-address">${poi.address || poi.pname + poi.cityname + poi.adname}</div>
+                    <div class="search-result-address">${fullAddress}</div>
                 `;
-                item.onclick = () => selectSearchResult(poi);
+                item.onclick = () => selectSearchResult(poi, fullAddress);
                 resultsDiv.appendChild(item);
             });
 
             resultsDiv.classList.add('active');
+            console.log('搜索结果已显示');
         }
 
         // 选择搜索结果
-        function selectSearchResult(poi) {
+        function selectSearchResult(poi, fullAddress) {
+            console.log('选择搜索结果:', poi, fullAddress);
+            
             // 关闭搜索结果
             document.getElementById('mapSearchResults').classList.remove('active');
 
@@ -2311,7 +2350,14 @@
 
             // 存储POI信息
             selectedPoiName = poi.name;
-            selectedPoiAddress = poi.address || '';
+            selectedPoiAddress = fullAddress || poi.address || '';
+            
+            console.log('存储的POI信息:', {
+                name: selectedPoiName,
+                address: selectedPoiAddress,
+                lat: lat,
+                lng: lng
+            });
 
             // 移动地图到该位置
             if (map) {
@@ -2329,7 +2375,6 @@
 
                 // 添加新标记
                 const markerColor = locationType === 'current' ? '#00f0ff' : '#ff6b35';
-                const markerText = locationType === 'current' ? '当前位置' : '目的地';
 
                 if (locationType === 'current') {
                     currentMarker = L.marker([lat, lng], {
@@ -2339,7 +2384,8 @@
                             iconSize: [24, 24],
                             iconAnchor: [12, 12]
                         })
-                    }).addTo(map).bindPopup(poi.name).openPopup();
+                    }).addTo(map);
+                    currentMarker.bindPopup(`<div style="padding: 5px;"><strong>${poi.name}</strong><br/>${fullAddress}</div>`).openPopup();
                 } else {
                     destinationMarker = L.marker([lat, lng], {
                         icon: L.divIcon({
@@ -2348,11 +2394,12 @@
                             iconSize: [24, 24],
                             iconAnchor: [12, 12]
                         })
-                    }).addTo(map).bindPopup(poi.name).openPopup();
+                    }).addTo(map);
+                    destinationMarker.bindPopup(`<div style="padding: 5px;"><strong>${poi.name}</strong><br/>${fullAddress}</div>`).openPopup();
                 }
 
                 // 显示选择提示
-                showCustomAlert('success', '位置已选择', `已定位到：${poi.name}<br>地址：${poi.address || '暂无详细地址'}`);
+                showCustomAlert('success', '位置已选择', `已定位到：${poi.name}<br>地址：${fullAddress || '暂无详细地址'}`);
             }
         }
 
@@ -2366,6 +2413,12 @@
                     // 优先使用搜索的POI信息
                     let locationName = selectedPoiName || '';
                     let detailedAddress = selectedPoiAddress || '';
+
+                    console.log('确认位置时的POI信息:', {
+                        name: selectedPoiName,
+                        address: selectedPoiAddress,
+                        locationType: locationType
+                    });
 
                     // 如果没有POI信息，使用坐标判断
                     if (!locationName) {
@@ -2404,24 +2457,32 @@
                         // 救援表单中的地图选择
                         if (locationType === 'current') {
                             const rescueLocation = document.getElementById('rescueLocation');
-                            rescueLocation.value = address;
+                            if (rescueLocation) {
+                                rescueLocation.value = address;
+                                console.log('设置当前位置:', address);
+                            }
 
                             // 如果有详细地址，自动填充到详细地址框
                             if (detailedAddress) {
                                 const detailInput = document.getElementById('currentLocationDetail');
                                 if (detailInput) {
                                     detailInput.value = detailedAddress;
+                                    console.log('设置详细地址:', detailedAddress);
                                 }
                             }
                         } else if (locationType === 'destination') {
                             const destinationLocation = document.getElementById('destinationLocation');
-                            destinationLocation.value = address;
+                            if (destinationLocation) {
+                                destinationLocation.value = address;
+                                console.log('设置目的地:', address);
+                            }
 
                             // 如果有详细地址，自动填充到详细地址框
                             if (detailedAddress) {
                                 const detailInput = document.getElementById('destinationLocationDetail');
                                 if (detailInput) {
                                     detailInput.value = detailedAddress;
+                                    console.log('设置详细地址:', detailedAddress);
                                 }
                             }
                         }
