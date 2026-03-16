@@ -2031,68 +2031,72 @@
                         }
                     });
 
-                // 尝试获取真实位置
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            const lat = position.coords.latitude;
-                            const lng = position.coords.longitude;
-                            map.setView([lat, lng], 15);
-
-                            // 根据选择类型显示默认位置标记
-                            const markerColor = locationType === 'current' ? '#00f0ff' : '#ff6b35';
-                            const markerText = locationType === 'current' ? '当前位置' : '目的地';
-
-                            if (locationType === 'current') {
-                                currentMarker = L.marker([lat, lng], {
-                                    icon: L.divIcon({
-                                        className: 'custom-marker current-marker',
-                                        html: `<div style="background: ${markerColor}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 15px ${markerColor};"></div>`,
-                                        iconSize: [24, 24],
-                                        iconAnchor: [12, 12]
-                                    })
-                                }).addTo(map).bindPopup(markerText).openPopup();
-                            } else {
-                                destinationMarker = L.marker([lat, lng], {
-                                    icon: L.divIcon({
-                                        className: 'custom-marker destination-marker',
-                                        html: `<div style="background: ${markerColor}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 15px ${markerColor};"></div>`,
-                                        iconSize: [24, 24],
-                                        iconAnchor: [12, 12]
-                                    })
-                                }).addTo(map).bindPopup(markerText).openPopup();
-                            }
-                        },
-                        (error) => {
-                            console.log('无法获取位置信息:', error);
-                            // 获取失败时显示默认位置
-                            const defaultLat = 39.9042;
-                            const defaultLng = 116.4074;
-                            const markerColor = locationType === 'current' ? '#00f0ff' : '#ff6b35';
-                            const markerText = locationType === 'current' ? '当前位置' : '目的地';
-
-                            if (locationType === 'current') {
-                                currentMarker = L.marker([defaultLat, defaultLng], {
-                                    icon: L.divIcon({
-                                        className: 'custom-marker current-marker',
-                                        html: `<div style="background: ${markerColor}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 15px ${markerColor};"></div>`,
-                                        iconSize: [24, 24],
-                                        iconAnchor: [12, 12]
-                                    })
-                                }).addTo(map).bindPopup(markerText).openPopup();
-                            } else {
-                                destinationMarker = L.marker([defaultLat, defaultLng], {
-                                    icon: L.divIcon({
-                                        className: 'custom-marker destination-marker',
-                                        html: `<div style="background: ${markerColor}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 15px ${markerColor};"></div>`,
-                                        iconSize: [24, 24],
-                                        iconAnchor: [12, 12]
-                                    })
-                                }).addTo(map).bindPopup(markerText).openPopup();
-                            }
-                        }
-                    );
                 }, 100);
+
+                // 尝试获取真实位置
+                setTimeout(function() {
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                const lat = position.coords.latitude;
+                                const lng = position.coords.longitude;
+                                map.setView([lat, lng], 15);
+
+                                // 根据选择类型显示默认位置标记
+                                const markerColor = locationType === 'current' ? '#00f0ff' : '#ff6b35';
+                                const markerText = locationType === 'current' ? '当前位置' : '目的地';
+
+                                if (locationType === 'current') {
+                                    currentMarker = L.marker([lat, lng], {
+                                        icon: L.divIcon({
+                                            className: 'custom-marker current-marker',
+                                            html: `<div style="background: ${markerColor}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 15px ${markerColor};"></div>`,
+                                            iconSize: [24, 24],
+                                            iconAnchor: [12, 12]
+                                        })
+                                    }).addTo(map).bindPopup(markerText).openPopup();
+                                } else {
+                                    destinationMarker = L.marker([lat, lng], {
+                                        icon: L.divIcon({
+                                            className: 'custom-marker destination-marker',
+                                            html: `<div style="background: ${markerColor}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 15px ${markerColor};"></div>`,
+                                            iconSize: [24, 24],
+                                            iconAnchor: [12, 12]
+                                        })
+                                    }).addTo(map).bindPopup(markerText).openPopup();
+                                }
+                            },
+                            (error) => {
+                                console.log('无法获取位置信息:', error);
+                                // 获取失败时显示默认位置
+                                const defaultLat = 39.9042;
+                                const defaultLng = 116.4074;
+                                const markerColor = locationType === 'current' ? '#00f0ff' : '#ff6b35';
+                                const markerText = locationType === 'current' ? '当前位置' : '目的地';
+
+                                if (locationType === 'current') {
+                                    currentMarker = L.marker([defaultLat, defaultLng], {
+                                        icon: L.divIcon({
+                                            className: 'custom-marker current-marker',
+                                            html: `<div style="background: ${markerColor}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 15px ${markerColor};"></div>`,
+                                            iconSize: [24, 24],
+                                            iconAnchor: [12, 12]
+                                        })
+                                    }).addTo(map).bindPopup(markerText).openPopup();
+                                } else {
+                                    destinationMarker = L.marker([defaultLat, defaultLng], {
+                                        icon: L.divIcon({
+                                            className: 'custom-marker destination-marker',
+                                            html: `<div style="background: ${markerColor}; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 15px ${markerColor};"></div>`,
+                                            iconSize: [24, 24],
+                                            iconAnchor: [12, 12]
+                                        })
+                                    }).addTo(map).bindPopup(markerText).openPopup();
+                                }
+                            }
+                        );
+                    }
+                }, 200);
             } else {
                 map.invalidateSize();
                 setTimeout(function() {
