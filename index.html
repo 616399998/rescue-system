@@ -2161,8 +2161,39 @@
                 
                 if (marker) {
                     const latlng = marker.getLatLng();
-                    // 显示坐标位置
-                    const address = `位置已选择 (纬度: ${latlng.lat.toFixed(6)}, 经度: ${latlng.lng.toFixed(6)})`;
+
+                    // 根据坐标生成简单的地名描述
+                    let locationName = '未命名位置';
+
+                    // 根据经纬度范围判断大概位置
+                    const lat = latlng.lat;
+                    const lng = latlng.lng;
+
+                    // 简单的位置判断
+                    if (lat >= 39.8 && lat <= 40.0 && lng >= 116.3 && lng <= 116.5) {
+                        locationName = '北京市朝阳区';
+                    } else if (lat >= 39.9 && lat <= 40.1 && lng >= 116.3 && lng <= 116.5) {
+                        locationName = '北京市东城区';
+                    } else if (lat >= 39.8 && lat <= 40.0 && lng >= 116.2 && lng <= 116.4) {
+                        locationName = '北京市海淀区';
+                    } else if (lat >= 31.1 && lat <= 31.3 && lng >= 121.4 && lng <= 121.6) {
+                        locationName = '上海市黄浦区';
+                    } else if (lat >= 23.0 && lat <= 23.2 && lng >= 113.2 && lng <= 113.4) {
+                        locationName = '广州市天河区';
+                    } else if (lat >= 22.2 && lat <= 22.4 && lng >= 114.1 && lng <= 114.3) {
+                        locationName = '深圳市福田区';
+                    } else if (lat >= 30.2 && lat <= 30.3 && lng >= 120.1 && lng <= 120.2) {
+                        locationName = '杭州市西湖区';
+                    } else {
+                        // 根据经纬度生成通用的位置描述
+                        const direction = lat > 0 ? '北纬' : '南纬';
+                        const latDegree = Math.abs(lat).toFixed(2) + '°';
+                        const eastWest = lng > 0 ? '东经' : '西经';
+                        const lngDegree = Math.abs(lng).toFixed(2) + '°';
+                        locationName = `${direction}${latDegree} ${eastWest}${lngDegree}`;
+                    }
+
+                    const address = locationName;
 
                     if (isRescueMap) {
                         // 救援表单中的地图选择
