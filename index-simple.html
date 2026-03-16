@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能救援系统 - 简化版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f3a 50%, #0a0e1a 100%);
+            color: #e0f7ff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 430px;
+            width: 100%;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #00f0ff;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .button {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            background: linear-gradient(135deg, #00f0ff, #0066ff);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 240, 255, 0.5);
+        }
+
+        .button.accent {
+            background: linear-gradient(135deg, #ff6b35, #ff8c00);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, rgba(16, 28, 48, 0.98), rgba(10, 14, 26, 0.98));
+            border: 2px solid #00f0ff;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 380px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal-title {
+            color: #00f0ff;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .close-btn {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>智能救援系统</h1>
+        <button class="button" onclick="showModal('道路救援')">道路救援</button>
+        <button class="button" onclick="showModal('医疗救援')">医疗救援</button>
+        <button class="button accent" onclick="showModal('紧急救援')">紧急救援</button>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-title" id="modal-title">提示</div>
+            <p id="modal-message">消息内容</p>
+            <button class="button close-btn" onclick="hideModal()">确定</button>
+        </div>
+    </div>
+
+    <script>
+        console.log('脚本开始加载');
+
+        function showModal(type) {
+            console.log('显示弹窗:', type);
+            document.getElementById('modal-title').textContent = type;
+            document.getElementById('modal-message').textContent = '您选择了 ' + type + '，功能正在开发中...';
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function hideModal() {
+            console.log('关闭弹窗');
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        console.log('脚本加载完成');
+    </script>
+</body>
+</html>

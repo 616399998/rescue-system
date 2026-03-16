@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试页面</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f3a 50%, #0a0e1a 100%);
+            color: #e0f7ff;
+            padding: 50px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .test-box {
+            background: rgba(16, 28, 48, 0.9);
+            border: 2px solid #00f0ff;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.3);
+        }
+
+        h1 {
+            color: #00f0ff;
+            margin-bottom: 20px;
+        }
+
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .success {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border: 1px solid #00ff88;
+        }
+
+        .error {
+            background: rgba(255, 107, 53, 0.2);
+            color: #ff6b35;
+            border: 1px solid #ff6b35;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #00f0ff, #0066ff);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 240, 255, 0.5);
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            min-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-box">
+        <h1>✅ CSS和JS测试</h1>
+        <div class="status success">CSS样式正常工作</div>
+        <div id="js-status">JavaScript加载中...</div>
+        <button onclick="testJS()">点击测试JavaScript</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // 更新JavaScript状态
+        document.getElementById('js-status').className = 'status success';
+        document.getElementById('js-status').textContent = 'JavaScript正常工作';
+
+        // 测试函数
+        function testJS() {
+            const now = new Date();
+            const result = document.getElementById('result');
+            result.innerHTML = `
+                <strong>测试结果：</strong><br><br>
+                ✅ JavaScript执行成功<br>
+                ✅ DOM操作正常<br>
+                ✅ 事件绑定正常<br><br>
+                当前时间：${now.toLocaleString()}
+            `;
+        }
+
+        console.log('JavaScript已加载');
+    </script>
+</body>
+</html>
